@@ -10,6 +10,9 @@
 "noEmit": true,
 "strict": true,
 "baseUrl": "."
+"paths": {
+      "@/*": ["./*"]
+    }
 },
 "include": ["app", "components", "next-env.d.ts"],
 "exclude": ["node_modules"]

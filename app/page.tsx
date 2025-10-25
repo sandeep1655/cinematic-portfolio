@@ -49,4 +49,5 @@ image="/healthcare-cover.png"
 <a href="/contact" className="btn btn-primary">Contact Me</a>
 </AnimatedSection>
 </div>
+);
 }
