@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root { color-scheme: dark; }
+html, body {
+@apply bg-base text-white scroll-smooth;
+}
+
+
+/* Subtle red grid background for depth */
+.body-bg {
+background-image: theme('backgroundImage.grid');
+background-size: 18px 18px;
+}
+
+
+/***** UI Primitives *****/
+.card {
+@apply bg-black/40 border border-white/10 rounded-2xl shadow-md shadow-black/20 hover:shadow-glow transition;
+}
+.btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-black/40 hover:bg-black/60 hover:border-primary text-white transition; }
+.btn-primary { @apply bg-primary hover:bg-primary-600; }
+.badge { @apply inline-block text-[11px] tracking-wide uppercase bg-primary/20 text-primary border border-primary/40 px-2.5 py-1 rounded-full; }
+
+
+/* Apple‑like section spacing */
+.section { @apply py-16 sm:py-24; }
+.title-xl { @apply text-4xl sm:text-5xl font-extrabold leading-tight; }
+.title-lg { @apply text-2xl font-bold; }
+
+
+/* Hover 3D tilt for cards */
+.tilt:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateZ(0); }

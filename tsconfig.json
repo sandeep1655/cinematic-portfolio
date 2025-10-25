@@ -1,0 +1,16 @@
+{
+"compilerOptions": {
+"target": "ES2020",
+"lib": ["dom", "es2020"],
+"jsx": "preserve",
+"module": "esnext",
+"moduleResolution": "bundler",
+"resolveJsonModule": true,
+"isolatedModules": true,
+"noEmit": true,
+"strict": true,
+"baseUrl": "."
+},
+"include": ["app", "components", "next-env.d.ts"],
+"exclude": ["node_modules"]
+}
