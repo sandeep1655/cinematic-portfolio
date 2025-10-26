@@ -13,7 +13,6 @@ interface FallingTextProps {
   backgroundColor?: string;
   wireframes?: boolean;
   gravity?: number;
-  mouseConstraintStiffness?: number;
   fontSize?: string;
 }
 
@@ -25,8 +24,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   trigger = 'auto',
   backgroundColor = 'transparent',
   wireframes = false,
-  gravity = 0.6, // ✅ tuned for smooth cinematic motion
-  mouseConstraintStiffness = 0.3,
+  gravity = 0.7, // ✅ tuned for smoother, non-jerky fall
   fontSize = '1.5rem',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,7 +47,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     textRef.current.innerHTML = newHTML;
   }, [text, highlightWords, highlightClass]);
 
-  // ✅ Trigger logic
+  // ✅ Trigger control
   useEffect(() => {
     if (trigger === 'auto') {
       setEffectStarted(true);
@@ -75,12 +73,11 @@ const FallingText: React.FC<FallingTextProps> = ({
     if (!effectStarted) return;
 
     const timeout = setTimeout(() => {
-      const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint, Body } = Matter;
+      const { Engine, Render, World, Bodies, Runner, Body } = Matter;
 
       const containerRect = containerRef.current!.getBoundingClientRect();
       const width = containerRect.width;
       const height = containerRect.height;
-
       if (width <= 0 || height <= 0) return;
 
       const engine = Engine.create();
@@ -97,13 +94,12 @@ const FallingText: React.FC<FallingTextProps> = ({
         },
       });
 
-      // ✅ Improved wall setup
+      // ✅ Boundaries inside the box
       const wallThickness = 20;
       const walls = [
         Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, {
           isStatic: true,
           restitution: 0.9,
-          friction: 0.3,
         }),
         Bodies.rectangle(wallThickness / 2, height / 2, wallThickness, height, {
           isStatic: true,
@@ -116,48 +112,40 @@ const FallingText: React.FC<FallingTextProps> = ({
         }),
       ];
 
-      // ✅ Spawn words at visible positions
+      // ✅ Create each word as a physics body
       const wordSpans = textRef.current!.querySelectorAll('.word');
       const wordBodies = Array.from(wordSpans).map((elem, i) => {
         const el = elem as HTMLElement;
         const textWidth = el.offsetWidth || 60;
         const textHeight = el.offsetHeight || 30;
 
-        // Randomize spawn position across width, start mid-air
+        // Spawn mid-screen for guaranteed visibility
         const x = (width / (wordSpans.length + 1)) * (i + 1);
-        const y = height / 4 + Math.random() * 50; // ✅ mid-screen start
+        const y = height / 3 + Math.random() * 40;
 
         const body = Bodies.rectangle(x, y, textWidth, textHeight, {
           render: { fillStyle: 'transparent' },
           restitution: 0.9,
-          frictionAir: 0.02,
-          friction: 0.3,
+          frictionAir: 0.015,
+          friction: 0.2,
         });
 
         Body.setVelocity(body, {
           x: (Math.random() - 0.5) * 3,
           y: (Math.random() - 0.5) * 2,
         });
-        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.08);
         return { elem: el, body };
       });
 
-      // ✅ Mouse
-      const mouse = Mouse.create(containerRef.current!);
-      const mouseConstraint = MouseConstraint.create(engine, {
-        mouse,
-        constraint: { stiffness: mouseConstraintStiffness, render: { visible: false } },
-      });
-      render.mouse = mouse;
-
-      // ✅ Add everything
-      World.add(engine.world, [...walls, mouseConstraint, ...wordBodies.map((wb) => wb.body)]);
+      // ✅ Add all physics objects
+      World.add(engine.world, [...walls, ...wordBodies.map((wb) => wb.body)]);
 
       const runner = Runner.create();
       Runner.run(runner, engine);
       Render.run(render);
 
-      // ✅ Sync DOM with physics
+      // ✅ Animate DOM sync
       const update = () => {
         wordBodies.forEach(({ body, elem }) => {
           const { x, y } = body.position;
@@ -181,10 +169,10 @@ const FallingText: React.FC<FallingTextProps> = ({
         World.clear(engine.world, false);
         Engine.clear(engine);
       };
-    }, 200); // give DOM time to paint text
+    }, 200); // slight delay so DOM spans render
 
     return () => clearTimeout(timeout);
-  }, [effectStarted, gravity, wireframes, backgroundColor, mouseConstraintStiffness]);
+  }, [effectStarted, gravity, wireframes, backgroundColor]);
 
   const handleTrigger = () => {
     if (!effectStarted && (trigger === 'click' || trigger === 'hover')) setEffectStarted(true);
