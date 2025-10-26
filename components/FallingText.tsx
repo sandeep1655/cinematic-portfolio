@@ -4,7 +4,6 @@ import { useRef, useState, useEffect } from 'react';
 import Matter from 'matter-js';
 import './FallingText.css';
 
-// ✅ Strongly typed props
 interface FallingTextProps {
   className?: string;
   text?: string;
@@ -26,16 +25,16 @@ const FallingText: React.FC<FallingTextProps> = ({
   trigger = 'auto',
   backgroundColor = 'transparent',
   wireframes = false,
-  gravity = 1.1,
+  gravity = 0.6, // ✅ tuned for smooth cinematic motion
   mouseConstraintStiffness = 0.3,
-  fontSize = '1.2rem',
+  fontSize = '1.5rem',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [effectStarted, setEffectStarted] = useState(false);
 
-  // ✅ Highlight selected words
+  // ✅ Highlight words
   useEffect(() => {
     if (!textRef.current) return;
     const words = text.split(' ');
@@ -50,7 +49,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     textRef.current.innerHTML = newHTML;
   }, [text, highlightWords, highlightClass]);
 
-  // ✅ Control when animation starts
+  // ✅ Trigger logic
   useEffect(() => {
     if (trigger === 'auto') {
       setEffectStarted(true);
@@ -71,11 +70,10 @@ const FallingText: React.FC<FallingTextProps> = ({
     }
   }, [trigger]);
 
-  // ✅ Matter.js physics
+  // ✅ Physics setup
   useEffect(() => {
     if (!effectStarted) return;
 
-    // Delay ensures DOM spans render before physics starts
     const timeout = setTimeout(() => {
       const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint, Body } = Matter;
 
@@ -99,55 +97,52 @@ const FallingText: React.FC<FallingTextProps> = ({
         },
       });
 
-      // ✅ Walls inside the container
+      // ✅ Improved wall setup
       const wallThickness = 20;
       const walls = [
         Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, {
           isStatic: true,
-          restitution: 0.8,
+          restitution: 0.9,
           friction: 0.3,
         }),
         Bodies.rectangle(wallThickness / 2, height / 2, wallThickness, height, {
           isStatic: true,
-          restitution: 0.8,
-          friction: 0.3,
         }),
         Bodies.rectangle(width - wallThickness / 2, height / 2, wallThickness, height, {
           isStatic: true,
-          restitution: 0.8,
-          friction: 0.3,
         }),
         Bodies.rectangle(width / 2, wallThickness / 2, width, wallThickness, {
           isStatic: true,
-          restitution: 0.8,
-          friction: 0.3,
         }),
       ];
 
-      // ✅ Create bodies for each word
+      // ✅ Spawn words at visible positions
       const wordSpans = textRef.current!.querySelectorAll('.word');
-      const wordBodies = Array.from(wordSpans).map((elem) => {
+      const wordBodies = Array.from(wordSpans).map((elem, i) => {
         const el = elem as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        const x = rect.left - containerRect.left + rect.width / 2;
-        const y = rect.top - containerRect.top + rect.height / 2;
+        const textWidth = el.offsetWidth || 60;
+        const textHeight = el.offsetHeight || 30;
 
-        const body = Bodies.rectangle(x, y, rect.width, rect.height, {
+        // Randomize spawn position across width, start mid-air
+        const x = (width / (wordSpans.length + 1)) * (i + 1);
+        const y = height / 4 + Math.random() * 50; // ✅ mid-screen start
+
+        const body = Bodies.rectangle(x, y, textWidth, textHeight, {
           render: { fillStyle: 'transparent' },
-          restitution: 0.8,
+          restitution: 0.9,
           frictionAir: 0.02,
           friction: 0.3,
         });
 
         Body.setVelocity(body, {
-          x: (Math.random() - 0.5) * 5,
-          y: Math.random() * -3,
+          x: (Math.random() - 0.5) * 3,
+          y: (Math.random() - 0.5) * 2,
         });
         Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
         return { elem: el, body };
       });
 
-      // ✅ Mouse interactivity
+      // ✅ Mouse
       const mouse = Mouse.create(containerRef.current!);
       const mouseConstraint = MouseConstraint.create(engine, {
         mouse,
@@ -155,14 +150,14 @@ const FallingText: React.FC<FallingTextProps> = ({
       });
       render.mouse = mouse;
 
-      // ✅ Add all objects
+      // ✅ Add everything
       World.add(engine.world, [...walls, mouseConstraint, ...wordBodies.map((wb) => wb.body)]);
 
       const runner = Runner.create();
       Runner.run(runner, engine);
       Render.run(render);
 
-      // ✅ Update loop
+      // ✅ Sync DOM with physics
       const update = () => {
         wordBodies.forEach(({ body, elem }) => {
           const { x, y } = body.position;
@@ -186,12 +181,11 @@ const FallingText: React.FC<FallingTextProps> = ({
         World.clear(engine.world, false);
         Engine.clear(engine);
       };
-    }, 100); // delay for visibility
+    }, 200); // give DOM time to paint text
 
     return () => clearTimeout(timeout);
   }, [effectStarted, gravity, wireframes, backgroundColor, mouseConstraintStiffness]);
 
-  // ✅ Manual trigger
   const handleTrigger = () => {
     if (!effectStarted && (trigger === 'click' || trigger === 'hover')) setEffectStarted(true);
   };
