@@ -72,10 +72,7 @@ const FallingText: React.FC<FallingTextProps> = ({
 
     const wallThickness = 20;
     const walls = [
-      Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, {
-        isStatic: true,
-        restitution: 0.8,
-      }),
+      Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, { isStatic: true, restitution: 0.8 }),
       Bodies.rectangle(wallThickness / 2, height / 2, wallThickness, height, { isStatic: true }),
       Bodies.rectangle(width - wallThickness / 2, height / 2, wallThickness, height, { isStatic: true }),
       Bodies.rectangle(width / 2, wallThickness / 2, width, wallThickness, { isStatic: true }),
@@ -98,7 +95,6 @@ const FallingText: React.FC<FallingTextProps> = ({
 
       Body.setVelocity(body, { x: (Math.random() - 0.5) * 3, y: (Math.random() - 0.5) * 2 });
       Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.08);
-
       return { elem: el, body };
     });
 
@@ -108,7 +104,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     Runner.run(runner, engine);
     Render.run(render);
 
-    // DOM updates
+    // DOM sync
     const update = () => {
       wordBodies.forEach(({ body, elem }) => {
         const { x, y } = body.position;
@@ -135,10 +131,9 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
   }, [backgroundColor, wireframes, gravity]);
 
-  // ✅ Hover adds interactivity (creates constraint)
+  // ✅ Enable both mouse and touch interaction
   useEffect(() => {
     if (!engine) return;
-
     const { Mouse, MouseConstraint, World } = Matter;
     const mouse = Mouse.create(containerRef.current!);
 
@@ -147,34 +142,36 @@ const FallingText: React.FC<FallingTextProps> = ({
       constraint: { stiffness: 0.3, render: { visible: false } },
     });
 
-    const handleMouseEnter = () => {
-      if (!engine.world.bodies.includes(mConstraint.constraint.bodyB as any)) {
-        World.add(engine.world, mConstraint);
-        setMouseConstraint(mConstraint);
-      }
+    // ✅ Add for both mouse + touch
+    const handleEnter = () => {
+      World.add(engine.world, mConstraint);
+      setMouseConstraint(mConstraint);
     };
-
-    const handleMouseLeave = () => {
+    const handleLeave = () => {
       if (mouseConstraint) {
-        // release any grabbed object
         (mouseConstraint.constraint.bodyB as any) = null;
         (mouseConstraint.mouse as any).button = -1;
       }
-      // remove constraint for free fall
       World.remove(engine.world, mConstraint);
       setMouseConstraint(null);
     };
 
-    const handleScroll = handleMouseLeave;
+    const handleTouchStart = handleEnter;
+    const handleTouchEnd = handleLeave;
+    const handleScroll = handleLeave;
 
     const container = containerRef.current;
-    container?.addEventListener('mouseenter', handleMouseEnter);
-    container?.addEventListener('mouseleave', handleMouseLeave);
+    container?.addEventListener('mouseenter', handleEnter);
+    container?.addEventListener('mouseleave', handleLeave);
+    container?.addEventListener('touchstart', handleTouchStart);
+    container?.addEventListener('touchend', handleTouchEnd);
     window.addEventListener('scroll', handleScroll);
 
     return () => {
-      container?.removeEventListener('mouseenter', handleMouseEnter);
-      container?.removeEventListener('mouseleave', handleMouseLeave);
+      container?.removeEventListener('mouseenter', handleEnter);
+      container?.removeEventListener('mouseleave', handleLeave);
+      container?.removeEventListener('touchstart', handleTouchStart);
+      container?.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('scroll', handleScroll);
       if (mouseConstraint) World.remove(engine.world, mConstraint);
     };
