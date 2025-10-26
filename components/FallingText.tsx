@@ -75,7 +75,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   useEffect(() => {
     if (!effectStarted) return;
 
-    const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint } = Matter;
+    const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint, Body } = Matter;
 
     const containerRect = containerRef.current!.getBoundingClientRect();
     const width = containerRect.width;
@@ -106,27 +106,26 @@ const FallingText: React.FC<FallingTextProps> = ({
     ];
 
     // ✅ Convert NodeList to Array safely
-   const wordSpans = textRef.current!.querySelectorAll('.word');
-const wordBodies = Array.from(wordSpans).map((elem) => {
-  const el = elem as HTMLElement;
-  const rect = el.getBoundingClientRect();
-  const x = rect.left - containerRect.left + rect.width / 2;
-  const y = rect.top - containerRect.top + rect.height / 2;
+    const wordSpans = textRef.current!.querySelectorAll('.word');
+    const wordBodies = Array.from(wordSpans).map((elem) => {
+      const el = elem as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      const x = rect.left - containerRect.left + rect.width / 2;
+      const y = rect.top - containerRect.top + rect.height / 2;
 
-  const body = Bodies.rectangle(x, y, rect.width, rect.height, {
-    render: { fillStyle: 'transparent' },
-    restitution: 0.8,
-    frictionAir: 0.01,
-  });
+      const body = Bodies.rectangle(x, y, rect.width, rect.height, {
+        render: { fillStyle: 'transparent' },
+        restitution: 0.8,
+        frictionAir: 0.01,
+      });
 
-  Matter.Body.setVelocity(body, {
-    x: (Math.random() - 0.5) * 6,
-    y: Math.random() * -2,
-  });
-  Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
-  return { elem: el, body };
-});
-
+      Body.setVelocity(body, {
+        x: (Math.random() - 0.5) * 6,
+        y: Math.random() * -2,
+      });
+      Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+      return { elem: el, body };
+    });
 
     // ✅ Mouse control
     const mouse = Mouse.create(containerRef.current!);
@@ -148,7 +147,6 @@ const wordBodies = Array.from(wordSpans).map((elem) => {
       wordBodies.forEach(({ body, elem }) => {
         const { x, y } = body.position;
         const angle = body.angle;
-
         elem.style.left = `${x}px`;
         elem.style.top = `${y}px`;
         elem.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
@@ -164,7 +162,7 @@ const wordBodies = Array.from(wordSpans).map((elem) => {
       if (render.canvas && canvasContainerRef.current) {
         canvasContainerRef.current.removeChild(render.canvas);
       }
-      World.clear(engine.world);
+      World.clear(engine.world, false); // <-- fixed
       Engine.clear(engine);
     };
   }, [effectStarted, gravity, wireframes, backgroundColor, mouseConstraintStiffness]);
