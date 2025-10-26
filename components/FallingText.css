@@ -19,7 +19,7 @@
 }
 
 .word {
-  position: absolute; /* ✅ makes the words movable in container */
+  position: absolute; /* ✅ allows free movement */
   display: inline-block;
   margin: 0;
   user-select: none;

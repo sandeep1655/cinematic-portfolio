@@ -26,8 +26,8 @@ const FallingText: React.FC<FallingTextProps> = ({
   trigger = 'auto',
   backgroundColor = 'transparent',
   wireframes = false,
-  gravity = 1,
-  mouseConstraintStiffness = 0.2,
+  gravity = 1.1,
+  mouseConstraintStiffness = 0.3,
   fontSize = '1rem',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +35,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [effectStarted, setEffectStarted] = useState(false);
 
-  // ✅ Highlight words in text
+  // ✅ Highlight words
   useEffect(() => {
     if (!textRef.current) return;
     const words = text.split(' ');
@@ -50,7 +50,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     textRef.current.innerHTML = newHTML;
   }, [text, highlightWords, highlightClass]);
 
-  // ✅ Control when the animation starts
+  // ✅ Trigger behavior
   useEffect(() => {
     if (trigger === 'auto') {
       setEffectStarted(true);
@@ -71,7 +71,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     }
   }, [trigger]);
 
-  // ✅ Matter.js physics animation
+  // ✅ Matter.js animation
   useEffect(() => {
     if (!effectStarted) return;
 
@@ -97,15 +97,32 @@ const FallingText: React.FC<FallingTextProps> = ({
       },
     });
 
-    // ✅ Walls and floor
+    // ✅ Walls (inside the container)
+    const wallThickness = 20;
     const walls = [
-      Bodies.rectangle(width / 2, height + 25, width, 50, { isStatic: true }),
-      Bodies.rectangle(-25, height / 2, 50, height, { isStatic: true }),
-      Bodies.rectangle(width + 25, height / 2, 50, height, { isStatic: true }),
-      Bodies.rectangle(width / 2, -25, width, 50, { isStatic: true }),
+      Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, {
+        isStatic: true,
+        restitution: 0.8,
+        friction: 0.3,
+      }),
+      Bodies.rectangle(wallThickness / 2, height / 2, wallThickness, height, {
+        isStatic: true,
+        restitution: 0.8,
+        friction: 0.3,
+      }),
+      Bodies.rectangle(width - wallThickness / 2, height / 2, wallThickness, height, {
+        isStatic: true,
+        restitution: 0.8,
+        friction: 0.3,
+      }),
+      Bodies.rectangle(width / 2, wallThickness / 2, width, wallThickness, {
+        isStatic: true,
+        restitution: 0.8,
+        friction: 0.3,
+      }),
     ];
 
-    // ✅ Convert NodeList to Array safely
+    // ✅ Convert NodeList safely
     const wordSpans = textRef.current!.querySelectorAll('.word');
     const wordBodies = Array.from(wordSpans).map((elem) => {
       const el = elem as HTMLElement;
@@ -116,18 +133,19 @@ const FallingText: React.FC<FallingTextProps> = ({
       const body = Bodies.rectangle(x, y, rect.width, rect.height, {
         render: { fillStyle: 'transparent' },
         restitution: 0.8,
-        frictionAir: 0.01,
+        frictionAir: 0.02,
+        friction: 0.3,
       });
 
       Body.setVelocity(body, {
-        x: (Math.random() - 0.5) * 6,
-        y: Math.random() * -2,
+        x: (Math.random() - 0.5) * 5,
+        y: Math.random() * -3,
       });
       Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
       return { elem: el, body };
     });
 
-    // ✅ Mouse control
+    // ✅ Mouse interactivity
     const mouse = Mouse.create(containerRef.current!);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
@@ -135,7 +153,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     });
     render.mouse = mouse;
 
-    // ✅ Add everything to the world
+    // ✅ Add to world
     World.add(engine.world, [...walls, mouseConstraint, ...wordBodies.map((wb) => wb.body)]);
 
     const runner = Runner.create();
@@ -156,19 +174,19 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
     update();
 
-    // ✅ Cleanup on unmount
+    // ✅ Cleanup
     return () => {
       Render.stop(render);
       Runner.stop(runner);
       if (render.canvas && canvasContainerRef.current) {
         canvasContainerRef.current.removeChild(render.canvas);
       }
-      World.clear(engine.world, false); // <-- fixed
+      World.clear(engine.world, false);
       Engine.clear(engine);
     };
   }, [effectStarted, gravity, wireframes, backgroundColor, mouseConstraintStiffness]);
 
-  // ✅ Trigger handlers
+  // ✅ Manual trigger
   const handleTrigger = () => {
     if (!effectStarted && (trigger === 'click' || trigger === 'hover')) setEffectStarted(true);
   };
