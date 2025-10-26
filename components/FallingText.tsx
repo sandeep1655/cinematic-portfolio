@@ -31,7 +31,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
   const [mouseConstraint, setMouseConstraint] = useState<Matter.MouseConstraint | null>(null);
 
-  // ✅ Highlight key words
+  // ✅ Highlight words
   useEffect(() => {
     if (!textRef.current) return;
     const words = text.split(' ');
@@ -46,7 +46,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     textRef.current.innerHTML = newHTML;
   }, [text, highlightWords, highlightClass]);
 
-  // ✅ Initialize physics
+  // ✅ Physics setup
   useEffect(() => {
     const { Engine, Render, World, Bodies, Runner, Body } = Matter;
     const container = containerRef.current;
@@ -70,12 +70,25 @@ const FallingText: React.FC<FallingTextProps> = ({
       },
     });
 
-    const wallThickness = 20;
+    // ✅ Thicker, safer walls outside the viewport
+    const wallThickness = 80;
     const walls = [
-      Bodies.rectangle(width / 2, height - wallThickness / 2, width, wallThickness, { isStatic: true, restitution: 0.8 }),
-      Bodies.rectangle(wallThickness / 2, height / 2, wallThickness, height, { isStatic: true }),
-      Bodies.rectangle(width - wallThickness / 2, height / 2, wallThickness, height, { isStatic: true }),
-      Bodies.rectangle(width / 2, wallThickness / 2, width, wallThickness, { isStatic: true }),
+      Bodies.rectangle(width / 2, height + wallThickness / 2, width * 2, wallThickness, {
+        isStatic: true,
+        restitution: 0.8,
+      }), // floor
+      Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height * 2, {
+        isStatic: true,
+        restitution: 0.8,
+      }), // left wall
+      Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height * 2, {
+        isStatic: true,
+        restitution: 0.8,
+      }), // right wall
+      Bodies.rectangle(width / 2, -wallThickness / 2, width * 2, wallThickness, {
+        isStatic: true,
+        restitution: 0.8,
+      }), // top
     ];
 
     const wordSpans = textRef.current!.querySelectorAll('.word');
@@ -95,7 +108,7 @@ const FallingText: React.FC<FallingTextProps> = ({
 
       Body.setVelocity(body, { x: (Math.random() - 0.5) * 3, y: (Math.random() - 0.5) * 2 });
       Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.08);
-      return { elem: el, body };
+      return { elem: el, body, textWidth, textHeight };
     });
 
     World.add(engine.world, [...walls, ...wordBodies.map((wb) => wb.body)]);
@@ -104,14 +117,25 @@ const FallingText: React.FC<FallingTextProps> = ({
     Runner.run(runner, engine);
     Render.run(render);
 
-    // DOM sync
+    // ✅ Clamp to container bounds
     const update = () => {
-      wordBodies.forEach(({ body, elem }) => {
+      wordBodies.forEach(({ body, elem, textWidth, textHeight }) => {
         const { x, y } = body.position;
         const angle = body.angle;
+
+        // Clamp positions so they stay visible in viewport
+        const clampedX = Math.max(textWidth / 2, Math.min(width - textWidth / 2, x));
+        const clampedY = Math.max(textHeight / 2, Math.min(height - textHeight / 2, y));
+
+        // If body exceeds bounds, teleport slightly back inside
+        if (x !== clampedX || y !== clampedY) {
+          Matter.Body.setPosition(body, { x: clampedX, y: clampedY });
+          Matter.Body.setVelocity(body, { x: 0, y: 0 });
+        }
+
         elem.style.position = 'absolute';
-        elem.style.left = `${x}px`;
-        elem.style.top = `${y}px`;
+        elem.style.left = `${clampedX}px`;
+        elem.style.top = `${clampedY}px`;
         elem.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
       });
       requestAnimationFrame(update);
@@ -131,7 +155,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
   }, [backgroundColor, wireframes, gravity]);
 
-  // ✅ Enable both mouse and touch interaction
+  // ✅ Mouse + Touch interaction
   useEffect(() => {
     if (!engine) return;
     const { Mouse, MouseConstraint, World } = Matter;
@@ -142,34 +166,35 @@ const FallingText: React.FC<FallingTextProps> = ({
       constraint: { stiffness: 0.3, render: { visible: false } },
     });
 
-    // ✅ Add for both mouse + touch
-    const handleEnter = () => {
-      World.add(engine.world, mConstraint);
-      setMouseConstraint(mConstraint);
+    const addConstraint = () => {
+      if (!mouseConstraint) {
+        World.add(engine.world, mConstraint);
+        setMouseConstraint(mConstraint);
+      }
     };
-    const handleLeave = () => {
+    const removeConstraint = () => {
       if (mouseConstraint) {
         (mouseConstraint.constraint.bodyB as any) = null;
         (mouseConstraint.mouse as any).button = -1;
+        World.remove(engine.world, mConstraint);
+        setMouseConstraint(null);
       }
-      World.remove(engine.world, mConstraint);
-      setMouseConstraint(null);
     };
 
-    const handleTouchStart = handleEnter;
-    const handleTouchEnd = handleLeave;
-    const handleScroll = handleLeave;
+    const handleTouchStart = addConstraint;
+    const handleTouchEnd = removeConstraint;
+    const handleScroll = removeConstraint;
 
     const container = containerRef.current;
-    container?.addEventListener('mouseenter', handleEnter);
-    container?.addEventListener('mouseleave', handleLeave);
+    container?.addEventListener('mouseenter', addConstraint);
+    container?.addEventListener('mouseleave', removeConstraint);
     container?.addEventListener('touchstart', handleTouchStart);
     container?.addEventListener('touchend', handleTouchEnd);
     window.addEventListener('scroll', handleScroll);
 
     return () => {
-      container?.removeEventListener('mouseenter', handleEnter);
-      container?.removeEventListener('mouseleave', handleLeave);
+      container?.removeEventListener('mouseenter', addConstraint);
+      container?.removeEventListener('mouseleave', removeConstraint);
       container?.removeEventListener('touchstart', handleTouchStart);
       container?.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('scroll', handleScroll);
