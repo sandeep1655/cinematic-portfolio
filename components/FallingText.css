@@ -19,13 +19,16 @@
 }
 
 .word {
-  position: absolute; /* ✅ allows free movement */
+  position: absolute;
   display: inline-block;
   margin: 0;
   user-select: none;
   transform: translate(-50%, -50%);
   left: 50%;
   top: 50%;
+  z-index: 10; /* ✅ ensures text is above canvas */
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .highlighted {
@@ -38,7 +41,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 0;
+  z-index: -1; /* ✅ move canvas behind text */
   width: 100%;
   height: 100%;
+  pointer-events: none; /* ✅ keeps text interactive */
 }

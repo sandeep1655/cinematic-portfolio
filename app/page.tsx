@@ -25,10 +25,11 @@ export default function HomePage() {
   text="Delivering advanced Data, AI, Cloud, AWS, and Snowflake solutions that transform raw data into business value."
   highlightWords={["Data", "AI", "Cloud", "AWS", "Snowflake"]}
   trigger="scroll"
-  gravity={1.2}  // ✅ makes the fall visible
+  gravity={1.1}
   fontSize="2rem"
   mouseConstraintStiffness={0.9}
 />
+
 
         </div>
       </AnimatedSection>
