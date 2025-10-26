@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import Matter from 'matter-js';
 import './FallingText.css';
 
-// ✅ TypeScript props interface
+// ✅ Strongly typed props for TypeScript
 interface FallingTextProps {
   className?: string;
   text?: string;
@@ -28,20 +28,20 @@ const FallingText: React.FC<FallingTextProps> = ({
   wireframes = false,
   gravity = 1,
   mouseConstraintStiffness = 0.2,
-  fontSize = '1rem'
+  fontSize = '1rem',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [effectStarted, setEffectStarted] = useState(false);
 
-  // Highlight specific words
+  // ✅ Highlight words in text
   useEffect(() => {
     if (!textRef.current) return;
     const words = text.split(' ');
     const newHTML = words
-      .map(word => {
-        const isHighlighted = highlightWords.some(hw =>
+      .map((word) => {
+        const isHighlighted = highlightWords.some((hw) =>
           word.toLowerCase().includes(hw.toLowerCase())
         );
         return `<span class="word ${isHighlighted ? highlightClass : ''}">${word}</span>`;
@@ -50,7 +50,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     textRef.current.innerHTML = newHTML;
   }, [text, highlightWords, highlightClass]);
 
-  // Trigger options: auto, scroll, hover, click
+  // ✅ Control when the animation starts
   useEffect(() => {
     if (trigger === 'auto') {
       setEffectStarted(true);
@@ -71,7 +71,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     }
   }, [trigger]);
 
-  // Matter.js physics engine
+  // ✅ Matter.js physics animation
   useEffect(() => {
     if (!effectStarted) return;
 
@@ -97,6 +97,7 @@ const FallingText: React.FC<FallingTextProps> = ({
       },
     });
 
+    // ✅ Walls and floor
     const walls = [
       Bodies.rectangle(width / 2, height + 25, width, 50, { isStatic: true }),
       Bodies.rectangle(-25, height / 2, 50, height, { isStatic: true }),
@@ -104,8 +105,9 @@ const FallingText: React.FC<FallingTextProps> = ({
       Bodies.rectangle(width / 2, -25, width, 50, { isStatic: true }),
     ];
 
+    // ✅ Convert NodeList to Array safely
     const wordSpans = textRef.current!.querySelectorAll('.word');
-    const wordBodies = [...wordSpans].map(elem => {
+    const wordBodies = Array.from(wordSpans).map((elem) => {
       const rect = elem.getBoundingClientRect();
       const x = rect.left - containerRect.left + rect.width / 2;
       const y = rect.top - containerRect.top + rect.height / 2;
@@ -124,6 +126,7 @@ const FallingText: React.FC<FallingTextProps> = ({
       return { elem, body };
     });
 
+    // ✅ Mouse control
     const mouse = Mouse.create(containerRef.current!);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
@@ -131,14 +134,19 @@ const FallingText: React.FC<FallingTextProps> = ({
     });
     render.mouse = mouse;
 
-    World.add(engine.world, [...walls, mouseConstraint, ...wordBodies.map(wb => wb.body)]);
+    // ✅ Add everything to the world
+    World.add(engine.world, [...walls, mouseConstraint, ...wordBodies.map((wb) => wb.body)]);
+
     const runner = Runner.create();
     Runner.run(runner, engine);
     Render.run(render);
 
+    // ✅ Update loop
     const update = () => {
       wordBodies.forEach(({ body, elem }) => {
-        const { x, y, angle } = body.position;
+        const { x, y } = body.position;
+        const angle = body.angle;
+
         elem.style.left = `${x}px`;
         elem.style.top = `${y}px`;
         elem.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
@@ -147,6 +155,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
     update();
 
+    // ✅ Cleanup on unmount
     return () => {
       Render.stop(render);
       Runner.stop(runner);
@@ -158,6 +167,7 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
   }, [effectStarted, gravity, wireframes, backgroundColor, mouseConstraintStiffness]);
 
+  // ✅ Trigger handlers
   const handleTrigger = () => {
     if (!effectStarted && (trigger === 'click' || trigger === 'hover')) setEffectStarted(true);
   };
