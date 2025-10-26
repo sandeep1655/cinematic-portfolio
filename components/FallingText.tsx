@@ -4,7 +4,21 @@ import { useRef, useState, useEffect } from 'react';
 import Matter from 'matter-js';
 import './FallingText.css';
 
-const FallingText = ({
+// ✅ TypeScript props interface
+interface FallingTextProps {
+  className?: string;
+  text?: string;
+  highlightWords?: string[];
+  highlightClass?: string;
+  trigger?: 'auto' | 'scroll' | 'hover' | 'click';
+  backgroundColor?: string;
+  wireframes?: boolean;
+  gravity?: number;
+  mouseConstraintStiffness?: number;
+  fontSize?: string;
+}
+
+const FallingText: React.FC<FallingTextProps> = ({
   className = '',
   text = '',
   highlightWords = [],
@@ -12,9 +26,9 @@ const FallingText = ({
   trigger = 'auto',
   backgroundColor = 'transparent',
   wireframes = false,
-  gravity = 0.6,
-  mouseConstraintStiffness = 0.9,
-  fontSize = '2rem'
+  gravity = 1,
+  mouseConstraintStiffness = 0.2,
+  fontSize = '1rem'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -27,7 +41,9 @@ const FallingText = ({
     const words = text.split(' ');
     const newHTML = words
       .map(word => {
-        const isHighlighted = highlightWords.some(hw => word.toLowerCase().includes(hw.toLowerCase()));
+        const isHighlighted = highlightWords.some(hw =>
+          word.toLowerCase().includes(hw.toLowerCase())
+        );
         return `<span class="word ${isHighlighted ? highlightClass : ''}">${word}</span>`;
       })
       .join(' ');
@@ -153,7 +169,11 @@ const FallingText = ({
       onClick={trigger === 'click' ? handleTrigger : undefined}
       onMouseEnter={trigger === 'hover' ? handleTrigger : undefined}
     >
-      <div ref={textRef} className="falling-text-target" style={{ fontSize, lineHeight: 1.4 }} />
+      <div
+        ref={textRef}
+        className="falling-text-target"
+        style={{ fontSize, lineHeight: 1.4 }}
+      />
       <div ref={canvasContainerRef} className="falling-text-canvas" />
     </div>
   );
