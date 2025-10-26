@@ -21,15 +21,15 @@ export default function HomePage() {
 
         {/* Cinematic Falling Text animation */}
         <div className="mt-10 flex justify-center">
-          <FallingText
-            text="Delivering advanced Data, AI, Cloud, AWS, and Snowflake solutions that transform raw data into business value."
-            highlightWords={["Data", "AI", "Cloud", "AWS", "Snowflake"]}
-            trigger="scroll"               // starts when scrolled into view
-            gravity={0.45}                 // smooth, realistic fall
-            fontSize="1.9rem"
-            backgroundColor="transparent"  // blends with card background
-            mouseConstraintStiffness={0.9}
-          />
+        <FallingText
+  text="Delivering advanced Data, AI, Cloud, AWS, and Snowflake solutions that transform raw data into business value."
+  highlightWords={["Data", "AI", "Cloud", "AWS", "Snowflake"]}
+  trigger="scroll"
+  gravity={1.2}  // ✅ makes the fall visible
+  fontSize="2rem"
+  mouseConstraintStiffness={0.9}
+/>
+
         </div>
       </AnimatedSection>
 

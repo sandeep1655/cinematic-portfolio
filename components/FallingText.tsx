@@ -147,6 +147,7 @@ const FallingText: React.FC<FallingTextProps> = ({
       wordBodies.forEach(({ body, elem }) => {
         const { x, y } = body.position;
         const angle = body.angle;
+        elem.style.position = 'absolute';
         elem.style.left = `${x}px`;
         elem.style.top = `${y}px`;
         elem.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;

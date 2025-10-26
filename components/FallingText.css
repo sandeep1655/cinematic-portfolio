@@ -19,9 +19,13 @@
 }
 
 .word {
+  position: absolute; /* ✅ makes the words movable in container */
   display: inline-block;
-  margin: 0 4px;
+  margin: 0;
   user-select: none;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 50%;
 }
 
 .highlighted {
