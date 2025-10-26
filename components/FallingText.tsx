@@ -106,25 +106,27 @@ const FallingText: React.FC<FallingTextProps> = ({
     ];
 
     // ✅ Convert NodeList to Array safely
-    const wordSpans = textRef.current!.querySelectorAll('.word');
-    const wordBodies = Array.from(wordSpans).map((elem) => {
-      const rect = elem.getBoundingClientRect();
-      const x = rect.left - containerRect.left + rect.width / 2;
-      const y = rect.top - containerRect.top + rect.height / 2;
+   const wordSpans = textRef.current!.querySelectorAll('.word');
+const wordBodies = Array.from(wordSpans).map((elem) => {
+  const el = elem as HTMLElement;
+  const rect = el.getBoundingClientRect();
+  const x = rect.left - containerRect.left + rect.width / 2;
+  const y = rect.top - containerRect.top + rect.height / 2;
 
-      const body = Bodies.rectangle(x, y, rect.width, rect.height, {
-        render: { fillStyle: 'transparent' },
-        restitution: 0.8,
-        frictionAir: 0.01,
-      });
+  const body = Bodies.rectangle(x, y, rect.width, rect.height, {
+    render: { fillStyle: 'transparent' },
+    restitution: 0.8,
+    frictionAir: 0.01,
+  });
 
-      Matter.Body.setVelocity(body, {
-        x: (Math.random() - 0.5) * 6,
-        y: Math.random() * -2,
-      });
-      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
-      return { elem, body };
-    });
+  Matter.Body.setVelocity(body, {
+    x: (Math.random() - 0.5) * 6,
+    y: Math.random() * -2,
+  });
+  Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+  return { elem: el, body };
+});
+
 
     // ✅ Mouse control
     const mouse = Mouse.create(containerRef.current!);
